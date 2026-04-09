@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  storytelling-agent:
+    build:
+      context: ../..
+      dockerfile: agents/storytelling-agent/Dockerfile
+    container_name: storytelling-agent
+    ports:
+      - "8030:8030"
+      - "8080:8080"
+    environment:
+      - AGENTVERSE_URL=${AGENTVERSE_URL}
+      - PRIVATE_KEY=${PRIVATE_KEY}
+      - AGENT_SEED=${AGENT_SEED}
+      - ASI_ONE_API_KEY=${ASI_ONE_API_KEY}
+      - ASI_BASE_URL=${ASI_BASE_URL}
+      - ASI_WEB_SEARCH=${ASI_WEB_SEARCH}
+      - STORY_MODEL=${STORY_MODEL}
+      - STORY_MODEL_TEMPERATURE=${STORY_MODEL_TEMPERATURE}
+      - STORY_MODEL_MAX_TOKENS=${STORY_MODEL_MAX_TOKENS}
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_STORE_FULL_CHAT_MESSAGES=${DB_STORE_FULL_CHAT_MESSAGES}
+      - AGENT_STATE_DIR=${AGENT_STATE_DIR}
+      - HEALTH_PORT=${HEALTH_PORT}
+      - REQUIRED_ENV_FOR_READY=${REQUIRED_ENV_FOR_READY}
+      - SENTRY_ENABLED=${SENTRY_ENABLED}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT}
+      - SENTRY_TRACES_SAMPLE_RATE=${SENTRY_TRACES_SAMPLE_RATE}
+      - SENTRY_TEST_ERROR=${SENTRY_TEST_ERROR}
+      - SHUTDOWN_TIMEOUT_SECONDS=${SHUTDOWN_TIMEOUT_SECONDS}
+    restart: unless-stopped
