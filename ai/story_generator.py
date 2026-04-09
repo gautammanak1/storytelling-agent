@@ -189,20 +189,33 @@ async def generate_story(
     framework_id: str,
     *,
     logger: Any = None,
+    research_context: str = "",
 ) -> str:
-    """Generate a full narrative using the selected framework and brief."""
+    """Generate a full narrative using the selected framework and brief.
+    
+    Args:
+        brief: Structured brief dict.
+        framework_id: Framework identifier.
+        logger: Optional logger instance.
+        research_context: Optional research context (web search results, scraped content).
+    """
     framework_context = build_framework_prompt_context(framework_id)
 
     brief_block = "\n".join(f"- {k}: {v}" for k, v in brief.items() if v)
 
     depth = _depth_prompt_block()
+    
+    # Inject research context if available
+    research_block = ""
+    if research_context:
+        research_block = f"\n\nREFERENCE RESEARCH:\n{research_context}\n"
 
     prompt = f"""Generate a complete, polished narrative using the framework and brief below.
 
 {framework_context}
 
 STORY BRIEF:
-{brief_block}
+{brief_block}{research_block}
 
 {depth}
 INSTRUCTIONS:
@@ -210,7 +223,7 @@ INSTRUCTIONS:
 2. **Formatting (scan-friendly):** Use **clear section headings** that name each framework beat in order (numbered or labeled, e.g. 1. Context, 2. …). Within each section, use **short paragraphs** and **bullet lists** where they improve clarity (facts, proof, actions) — avoid an unstructured wall of text.
 3. Write in the tone and style appropriate for the audience
 4. Make it audience-specific: address their concerns, motivations, and decision context
-5. Include concrete details, examples, and proof points — not vague generalities
+5. Include concrete details, examples, and proof points — not vague generalities{f" — use the research provided if applicable to ground your narrative in facts." if research_context else ""}
 6. End with a strong, memorable key message
 7. If the format is a script, write it as a script. If a presentation, write slide-by-slide with enough speaker-ready material. If ad copy, write punchy and concise (ignore high word-count targets for that format only).
 8. After the narrative, include a concise "Framework Notes" section (roughly half a page max) explaining why this framework fits and how each element maps — do not let Framework Notes dwarf the narrative.
