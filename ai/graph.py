@@ -60,6 +60,24 @@ class StoryState(TypedDict, total=False):
     evaluation: str
     refinement_count: int
     outbox: list[dict[str, Any]]
+    # Research fields (optional, populated by research nodes if enabled)
+    research_query: str
+    search_results: list[dict[str, str]]
+    scraped_content: list[dict[str, str]]
+    research_context: str
+    # LLM-based research decision making
+    research_intent: str  # "research_needed" | "clarification_needed" | "skip_research"
+    intent_confidence: float  # 0.0-1.0 confidence score
+    intent_reason: str  # Reason for research decision
+    suggested_keywords: list[str]  # LLM-suggested search keywords
+    # Conversation context
+    message_history: list[str]  # Previous messages in conversation
+    follow_up_questions: list[str]  # Follow-up questions for user
+    research_context_refined: str  # Refined context after suggestions
+    refined_keywords: list[str]  # Refined search keywords
+    clarification_questions: list[str]  # Clarification questions from LLM
+    missing_elements: list[str]  # Missing elements in brief
+    llm_suggestions: list[str]  # LLM suggestions for improvement
     # Ephemeral: merged from ``ainvoke`` input only; stripped before checkpoint persistence.
     event: NotRequired[dict[str, Any]]
 
@@ -568,12 +586,25 @@ def _greeting_nudge(state: StoryState, stage: Stage) -> dict[str, Any] | None:
     if stage == "collect_brief":
         if (state.get("raw_brief") or "").strip():
             return {"type": "process_brief"}
-        return {"type": "send_text", "text": "I'm here! Share your story brief — objective, audience, and format."}
+        return {
+            "type": "send_text",
+            "text": (
+                "I'm here! Share your story brief — objective, audience, and format.\n\n"
+                "💡 *Tip:* Mention specific companies, products, or recent events for research-enhanced narratives "
+                "(e.g., 'Apple's latest AI announcement' or 'emerging AI regulations 2026')"
+            ),
+        }
     if stage == "confirm_framework":
         fid = str(state.get("framework_id") or "business")
         return {"type": "send_text", "text": f"Still here! We have a framework ready.\n\n{framework_confirmation_footer(fid)}"}
     if stage == "generating":
-        return {"type": "send_text", "text": "Still drafting your narrative — hang tight!"}
+        return {
+            "type": "send_text",
+            "text": (
+                "Still drafting your narrative — hang tight!\n\n"
+                "(I'm researching recent facts and events to ground the story, if your brief mentions them.)"
+            ),
+        }
     if stage == "story_ready":
         return {"type": "send_text", "text": _STORY_MENU}
     if stage == "refining":
@@ -638,7 +669,11 @@ def apply_story_event(prior: StoryState, event: Event) -> StoryState:
         else:
             _append_outbox(state, {
                 "type": "send_text",
-                "text": "Please describe what story or narrative you need — include the objective, audience, and format.",
+                "text": (
+                    "Please describe what story or narrative you need — include the objective, audience, and format.\n\n"
+                    "💡 **Research Bonus:** Mention specific companies, products, or recent events (e.g. 'Apple's latest announcement' or '2026 AI trends') "
+                    "and I'll automatically research and ground your narrative in real facts."
+                ),
             })
 
     elif stage == "collect_brief":
