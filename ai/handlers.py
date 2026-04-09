@@ -109,6 +109,7 @@ async def iter_generate_full_story(
     logger: Any,
 ) -> AsyncIterator[str]:
     from .story_generator import generate_story
+    from .research_nodes import async_enrich_context_full
 
     state = await get_story_state(sender, session_id)
     brief = state.get("structured_brief", {})
@@ -119,7 +120,14 @@ async def iter_generate_full_story(
         brief = {"objective": state.get("raw_brief", "")}
 
     try:
-        story = await generate_story(brief, framework_id, logger=logger)
+        # Perform research if applicable
+        logger.info("[research] Checking if brief warrants research...")
+        research_state = await async_enrich_context_full(state)
+        research_context = research_state.get("research_context", "")
+        if research_context:
+            logger.info(f"[research] Injecting {len(research_context)} chars of research")
+
+        story = await generate_story(brief, framework_id, logger=logger, research_context=research_context)
 
         res = await graph_step(
             user_address=sender,

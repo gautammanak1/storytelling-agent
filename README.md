@@ -44,6 +44,14 @@ You can use it to:
 * **Story Evaluation**: Reviews narratives for clarity, relevance, memorability, and impact
 * **Iterative Refinement**: Improves stories based on feedback and audience needs
 
+### Research-Enhanced Storytelling
+
+* **Automatic Research Detection**: Identifies when briefs mention companies, products, or recent events
+* **Web Search Integration**: Searches DuckDuckGo for latest news, announcements, and web results
+* **Content Extraction**: Scrapes and extracts full articles from URLs using Trafilatura
+* **Fact-Grounded Narratives**: Automatically injects research findings into story generation prompts
+* **Smart Caching**: Detects research-worthy briefs and performs parallel search + scrape operations
+
 ---
 
 ## Storytelling Frameworks
@@ -173,6 +181,20 @@ uv run python agent.py
 
 Optional: `DATABASE_URL` for session state and chat idempotency (recommended for production), `SENTRY_*`, `HEALTH_PORT`, `REQUIRED_ENV_FOR_READY`.
 
+### Research Integration Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RESEARCH_ENABLED` | `true` | Enable/disable web search and content scraping |
+| `SEARCH_MAX_RESULTS` | `5` | Maximum DuckDuckGo search results per query |
+| `SCRAPE_MAX_URLS` | `3` | Maximum URLs to extract content from |
+
+**How Research Works:**
+- When a brief mentions companies, products, recent events (2026, 2025, etc.), or contains keywords like "latest", "news", "announcement", research is automatically triggered
+- Parallel search + scrape operations retrieve web results and extract article content
+- Research findings are injected into the story generation prompt to ground narratives in real-world facts
+- Falls back gracefully if search/scrape fails — story generation proceeds with brief only
+
 Narrative length: generation/refine use a higher token budget (`STORY_NARRATIVE_MAX_TOKENS`, default derived from `STORY_MODEL_MAX_TOKENS` or **8192**) and prompts that ask for **substantial** drafts (`STORY_TARGET_MIN_WORDS`, `STORY_OUTPUT_DEPTH=comprehensive` by default). One chat message cannot safely return literally thousands of *lines* of prose; raise `STORY_NARRATIVE_MAX_TOKENS` (e.g. 16384) if your ASI1 quota allows and you need extremely long outputs.
 
 ### Docker
@@ -208,3 +230,8 @@ docker compose up --build
   * `ai/story_generator.py` — Brief, generate, evaluate, refine (ASI1)
   * `ai/handlers.py` — Graph outbox side-effects
   * `ai/pipeline.py` — `ask()` async generator
+  * `ai/research/` — Web search + content extraction (new)
+    * `websearch.py` — DuckDuckGo async search, GitHub activity, news queries
+    * `scraper.py` — Trafilatura-based content extraction + batch processing
+    * `detector.py` — Heuristics to detect research-worthy briefs, build search queries
+  * `ai/research_nodes.py` — LangGraph nodes for research pipeline integration
